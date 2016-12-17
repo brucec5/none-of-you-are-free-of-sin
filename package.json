@@ -1,0 +1,23 @@
+{
+  "name": "none-of-you-are-free-of-sin",
+  "version": "0.1.0",
+  "description": "Chrome extension for blocking undesirable youtube channels",
+  "main": "content.js",
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^3.12.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brucec5/none-of-you-are-free-of-sin.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brucec5/none-of-you-are-free-of-sin/issues"
+  },
+  "homepage": "https://github.com/brucec5/none-of-you-are-free-of-sin#readme"
+}
