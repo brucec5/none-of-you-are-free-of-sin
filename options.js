@@ -68,25 +68,9 @@ function deleteRow(event) {
   let $row = event.target.parentNode.parentNode;
   let id = $row.dataset.id;
 
-  chrome.storage.local.get('BlockItems', (s) => {
-    let existingItems = s.BlockItems || [];
-    let index = existingItems.findIndex((item) => item.id == id);
-    existingItems.splice(index, 1);
-
-    chrome.storage.local.set({ BlockItems: existingItems }, () => {
-      $row.remove();
-    });
+  chrome.extension.getBackgroundPage().deleteBlockItem(id, () => {
+    $row.remove();
   });
-}
-
-/**
- * Returns a new unique Id
- *
- * @param  {Array<BlockItem>} existingItems The existing block items
- * @returns {Number} A new unique numeric ID
- */
-function newId(existingItems) {
-  return existingItems.reduce((acc, item) => Math.max(acc, item.id), 0) + 1;
 }
 
 /**
@@ -108,18 +92,11 @@ function saveNewBlockItem(event) {
     reason: $newReason.value
   };
 
-  // TODO: maybe split this out into a separate function
-  chrome.storage.local.get('BlockItems', (s) => {
-    let existingItems = s.BlockItems || [];
-    blockItem.id = newId(existingItems);
-    existingItems.push(blockItem);
-
-    chrome.storage.local.set({ BlockItems: existingItems }, () => {
-      $tableBody.appendChild(tableRow(blockItem));
-      $newChannelName.value = '';
-      $newChannelId.value = '';
-      $newReason.value = '';
-    });
+  chrome.extension.getBackgroundPage().addNewBlockItem(blockItem, (newBlockItem) => {
+    $tableBody.appendChild(tableRow(newBlockItem));
+    $newChannelName.value = '';
+    $newChannelId.value = '';
+    $newReason.value = '';
   });
 }
 
@@ -152,18 +129,14 @@ function commitUpdate(event) {
 
   let $row = event.target.parentNode.parentNode;
   let id = $row.dataset.id;
+  let blockItemData = {
+    channelName: $row.getElementsByClassName('channel-name')[0].value,
+    channelId: $row.getElementsByClassName('channel-id')[0].value,
+    reason: $row.getElementsByClassName('reason')[0].value
+  };
 
-  chrome.storage.local.get('BlockItems', (s) => {
-    let existingItems = s.BlockItems || [];
-    let item = existingItems.find((item) => item.id == id);
-
-    item.channelName = $row.getElementsByClassName('channel-name')[0].value;
-    item.channelId = $row.getElementsByClassName('channel-id')[0].value;
-    item.reason = $row.getElementsByClassName('reason')[0].value;
-
-    chrome.storage.local.set({ BlockItems: existingItems }, () => {
-      $tableBody.replaceChild(tableRow(item), $row);
-    });
+  chrome.extension.getBackgroundPage().updateBlockItem(id, blockItemData, (item) => {
+    $tableBody.replaceChild(tableRow(item), $row);
   });
 }
 

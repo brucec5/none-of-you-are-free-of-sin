@@ -65,6 +65,134 @@ function blockVideo($video) {
   $video.classList.add('blocked-video');
 }
 
+function dismissModal() {
+  let $modalShadow = document.getElementsByClassName('noyafos-modal-shadow')[0];
+  $modalShadow.remove();
+}
+
+function dismissModalHandler(event) {
+  event.preventDefault();
+
+  dismissModal();
+}
+
+function submitBlockKey(event) {
+  if (event.keyCode === 13) {
+    event.preventDefault();
+    submitBlock();
+  }
+}
+
+function submitBlockClick(event) {
+  event.preventDefault();
+  submitBlock();
+}
+
+function submitBlock() {
+  let $reasonInput = document.getElementById('NOYAFOSBlockReason');
+
+  let blockItem = {
+    channelName: $reasonInput.dataset.channelName,
+    channelId: $reasonInput.dataset.channelId,
+    reason: $reasonInput.value
+  };
+
+  chrome.runtime.sendMessage({action: 'addNewBlockItem', newBlockItem: blockItem}, () => {
+    blockSet.add(blockItem.channelId);
+    dismissModal();
+    main();
+  });
+}
+
+function shadow($child) {
+  let $shadow = document.createElement('div');
+  $shadow.classList.add('noyafos-modal-shadow');
+  $shadow.appendChild($child);
+  return $shadow;
+}
+
+function modal(title, callback) {
+  let $modal = document.createElement('div');
+  $modal.classList.add('noyafos-modal');
+
+  let $headerRow = document.createElement('div');
+  $headerRow.classList.add('noyafos-modal-header');
+
+  let $header = document.createElement('h1');
+  $header.appendChild(document.createTextNode(title));
+  $headerRow.appendChild($header);
+
+  let $closeButton = document.createElement('a');
+  $closeButton.classList.add('noyafos-modal-close-btn');
+  $closeButton.setAttribute('href', '#');
+  $closeButton.appendChild(document.createTextNode('×'));
+  $closeButton.onclick = dismissModalHandler;
+  $header.appendChild($closeButton);
+
+  let $modalContent = document.createElement('div');
+  $modalContent.classList.add('noyafos-modal-content');
+
+  callback($modalContent);
+
+  $modal.appendChild($headerRow);
+  $modal.appendChild($modalContent);
+
+  return $modal;
+}
+
+function showBlockModal(theChannelId, theChannelName) {
+  document.body.appendChild(
+    shadow(
+      modal(`Block Channel ${theChannelName}`, ($modalContent) => {
+        let $reasonInput = document.createElement('input');
+        $reasonInput.dataset.channelId = theChannelId;
+        $reasonInput.dataset.channelName = theChannelName;
+        $reasonInput.setAttribute('id', 'NOYAFOSBlockReason');
+        $reasonInput.setAttribute('type', 'text');
+        $reasonInput.setAttribute('placeholder', 'Block Reason');
+        $reasonInput.onkeyup = submitBlockKey;
+        $modalContent.appendChild($reasonInput);
+
+        let $submit = document.createElement('button');
+        $submit.classList.add('noyafos-submit');
+        $submit.appendChild(document.createTextNode('Submit'));
+        $submit.onclick = submitBlockClick;
+        $modalContent.appendChild($submit);
+
+        window.setTimeout(() => $reasonInput.focus(), 0);
+      })
+    )
+  );
+}
+
+/**
+ * handleAltClickOnVideo - Handles alt-clicking on videos. Block the video.
+ *
+ * @param  {type} event description
+ * @returns {type}       description
+ */
+function handleAltClickOnVideo(event) {
+  if (event.altKey) {
+    event.preventDefault();
+
+    let $video = event.target;
+
+    while ($video.nodeName != 'LI') {
+      if ($video.classList.contains('delete-cell')) {
+        return;
+      }
+
+      $video = $video.parentNode;
+    }
+
+    let $channelLink = $video.querySelector('[data-ytid]');
+    let theChannelId = $channelLink.dataset.ytid;
+    let theChannelName = $channelLink.textContent;
+
+    showBlockModal(theChannelId, theChannelName);
+  }
+}
+
 /**
  * Checks a given video in a feed, hiding it if it should be blocked
  *
@@ -77,8 +205,10 @@ function checkFeedVideo($video) {
 
   if (isBlocked(userId)) {
     // TODO: factor out logging to a configurable setting
-    console.log('Blocking ' + userId);
+    // console.log('Blocking ' + userId);
     blockVideo($video);
+  } else {
+    $video.onclick = handleAltClickOnVideo;
   }
 }
 
@@ -93,7 +223,7 @@ function checkFeed($feed) {
   let userId = $userLinks.length > 0 && channelId($userLinks[0]);
 
   if (isBlocked(userId)) {
-    console.log('Blocking whole feed by ' + userId);
+    // console.log('Blocking whole feed by ' + userId);
     blockVideo($feed);
   } else {
     let $videos = $feed.getElementsByClassName('yt-shelf-grid-item');
@@ -114,8 +244,10 @@ function checkSidebarVideo($video) {
     let $userElement = $possibleUserElements.length > 0 && $possibleUserElements[0].children[0];
     let userId = $userElement && channelId($userElement);
     if (isBlocked(userId)) {
-      console.log('Blocking ' + userId);
+      // console.log('Blocking ' + userId);
       blockVideo($video);
+    } else {
+      $video.onclick = handleAltClickOnVideo;
     }
   } else if ($video.id == 'watch-more-related') {
     Array.from($video.children, checkSidebarVideo);
@@ -140,8 +272,10 @@ function checkSidebarSection($section) {
  * @returns {undefined}
  */
 function checkSidebar($sidebar) {
-  let $sections = $sidebar.children[1].children[2].children;
-  Array.from($sections).forEach(checkSidebarSection);
+  if ($sidebar.children[1]) {
+    let $sections = $sidebar.children[1].children[2].children;
+    Array.from($sections).forEach(checkSidebarSection);
+  }
 }
 
 /**

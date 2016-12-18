@@ -1,3 +1,59 @@
 .blocked-video {
   display: none !important;
 }
+
+.noyafos-modal-shadow {
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000000000;
+}
+
+.noyafos-modal {
+  box-sizing: border-box;
+  background: white;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2000000001;
+}
+
+.noyafos-modal-close-btn {
+  box-sizing: border-box;
+  float: right;
+}
+
+#NOYAFOSBlockReason {
+  box-sizing: border-box;
+  font-size: 2em;
+  padding: 5px;
+  width: 100%;
+}
+
+.noyafos-modal-header {
+  box-sizing: border-box;
+  padding: 10px;
+  border-bottom: 1px solid #111111;
+}
+
+.noyafos-modal-content {
+  box-sizing: border-box;
+  padding: 10px
+}
+
+.noyafos-submit {
+  box-sizing: border-box;
+  background-color: #111111;
+  color: white;
+  padding: 4px;
+  display: block;
+  margin-top: 10px;
+  font-size: 1.5em;
+}
