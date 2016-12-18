@@ -9,37 +9,14 @@
  */
 var blockSet = undefined;
 
-
 /**
- * @returns {Set} The set of undesirable channel IDs
+ * setBlockItems - Sets the locally saved block items
+ *
+ * @param  {Array<BlockItem>} blockItems The stored block items
+ * @returns {undefined}
  */
-function getBlockSet() {
-  if (blockSet) {
-    return blockSet;
-  } else {
-    // TODO: load videos from settings via background pages
-    blockSet =  new window.Set([
-      'thunderf00t',
-      'TheAmazingAtheist',
-      'UCu9s6DRtR3AmKWLYq-RYcpg', // Some rando channel with a FF9 video, just for testing
-      'UCJUSr7xT6mgyz0Xj2rMD5CA', // some FINAL FANTASY X-3!! video
-      'UCzV3Xt_qXi8KaaBR58q-qFg', // 20 things you might not know about FFX
-      'UCatsEigMj389eIEcfLqqZiA', // Some shitty compilation of something?
-      'UCrKPVYH-80qUVt_7Kvbtxtg', // 'geekster', some dumb nerd bait or something
-      'UCekQr9znsk2vWxBo3YiLq2w', // you suck at cooking
-      'UCKx31X4HNsuoLZjWiW7jbgQ', // 'final fantasy peasant'
-      'UC_eTOFa9Le0lgXsxGRcIZJQ', 'FabNaziDoge MEMES', // wtf
-      'UCpOlCpYDCelxVJWtbZsYOmQ', 'Top Lists',
-      'UCodK-9eXEm_hWSDDfLr4QzA', 'Pretty Good Gaming',
-      'UCx5wQ9mA4dsQnDEamve3ujQ', 'Ultimate Gamerz',
-      'UCGLTvOqJOcbIwBtX0Rou2gw', 'Rags', // CRACKED IS ANTI-GAMER!!1
-      'UC-ZHSXPSC40TMFKHMs-J1UA', 'Ponstory Games', // Gamer, hour long video on why SW:TFA is the worst movie of all time
-      'UCVllJ0TyLi0n9pbPJE8eQeQ', 'tenaciousskeet', // That dumb pokegirl flash for furries in denial who have no taste
-      'UC-lHJZR3Gqxm24_Vd_AJ5Yw', 'PewDiePie',
-    ]);
-
-    return blockSet;
-  }
+function setBlockItems(blockItems) {
+  blockSet = new window.Set(blockItems.map((item) => item.channelId));
 }
 
 /**
@@ -47,7 +24,7 @@ function getBlockSet() {
  * @returns {boolean} true if the given channel is blocked
  */
 function isBlocked(channelId) {
-  return getBlockSet().has(channelId);
+  return blockSet.has(channelId);
 }
 
 /**
@@ -213,5 +190,9 @@ function loadObserver() {
   });
 }
 
-main();
-loadObserver();
+chrome.storage.local.get('BlockItems', (o) => {
+  setBlockItems(o.BlockItems || []);
+
+  main();
+  loadObserver();
+});

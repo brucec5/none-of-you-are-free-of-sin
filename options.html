@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NOYAFOS Options</title>
+</head>
+<body>
+  <div id="MainContent">
+    <h1>Blocked Channels</h1>
+    <table id="Channels">
+      <thead>
+        <tr>
+          <th>Channel Name</th>
+          <th>Channel ID</th>
+          <th>Reason</th>
+          <th>Save</th>
+        </tr>
+        <tr>
+          <td>
+            <input type="text" id="NewChannelName" placeholder="Channel Name" />
+          </td>
+          <td>
+            <input type="text" id="NewChannelId" placeholder="Channel ID" />
+          </td>
+          <td>
+            <input type="text" id="NewReason" placeholder="Reason" />
+          </td>
+          <td>
+            <button id="NewSave">Save</button>
+          </td>
+        </tr>
+      </thead>
+      <tbody id="ChannelsBody">
+      </tbody>
+    </table>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>
