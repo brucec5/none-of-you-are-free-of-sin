@@ -1,0 +1,21 @@
+* {
+  box-sizing: border-box;
+}
+
+.table {
+  border: 1px solid #111;
+  border-collapse: collapse;
+}
+
+.table td, .table th {
+  border: 1px solid #111;
+  padding: 3px;
+}
+
+.table input[type='text'] {
+  width: 100%;
+}
+
+.striped tbody tr:nth-child(2n){
+  background: #d0d0d0;
+}

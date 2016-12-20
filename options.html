@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="stylesheet" href="options.css" />
   <title>NOYAFOS Options</title>
 </head>
 <body>
   <div id="MainContent">
     <h1>Blocked Channels</h1>
-    <table id="Channels">
+    <table id="Channels" class="table striped">
       <thead>
         <tr>
           <th>Channel Name</th>
@@ -29,6 +30,14 @@
           </td>
         </tr>
       </thead>
+      <tfoot>
+        <tr>
+          <th>Channel Name</th>
+          <th>Channel ID</th>
+          <th>Reason</th>
+          <th>Save</th>
+        </tr>
+      </tfoot>
       <tbody id="ChannelsBody">
       </tbody>
     </table>
