@@ -67,7 +67,7 @@ function blockVideo($video) {
 function rootVideoNode($node) {
   if ($node.nodeName == 'BODY') {
     return undefined;
-  } else if ($node.nodeName == 'YTD-COMPACT-VIDEO-RENDERER') {
+  } else if ($node.nodeName.match(/YTD-(COMPACT-VIDEO|GRID-VIDEO|SHELF)-RENDERER/)) {
     return $node;
   } else {
     return rootVideoNode($node.parentNode);
@@ -200,12 +200,12 @@ function handleAltClickOnVideo(event) {
 
 function channelName($video) {
   let $byline = $video.querySelector('yt-formatted-string#byline');
-  return $byline && $byline.innerHTML;
+  return $byline && $byline.textContent;
 }
 
 function videoTitle($video) {
-  let $titleElement = $video.querySelector('span#video-title');
-  return $titleElement.innerHTML.trim();
+  let $titleElement = $video.querySelector('#video-title');
+  return $titleElement.textContent.trim();
 }
 
 /**
@@ -215,7 +215,7 @@ function videoTitle($video) {
  * @param  {Element} $video The video to potentially block
  * @returns {undefined}
  */
-function checkSidebarVideo($video) {
+function checkVideo($video) {
   let name = channelName($video);
   if (isBlocked(name)) {
     blockVideo($video);
@@ -236,8 +236,12 @@ function checkSidebarVideo($video) {
  */
 function main() {
   let $sidebar = document.getElementsByTagName('ytd-compact-video-renderer');
+  let $grid = document.getElementsByTagName('ytd-grid-video-renderer');
+  let $shelf = document.getElementsByTagName('ytd-shelf-renderer');
 
-  Array.from($sidebar).forEach(checkSidebarVideo);
+  Array.from($sidebar).forEach(checkVideo);
+  Array.from($grid).forEach(checkVideo);
+  Array.from($shelf).forEach(checkVideo);
   console.log('done blocking things');
 }
 
@@ -250,21 +254,30 @@ function loadObserver() {
   let triggerFunc = throttle(main, 500);
   let observer = new MutationObserver(triggerFunc);
   let sidebarObserver = new MutationObserver(() => {
-    let related = document.getElementById('related');
-    if (related) {
+    let $related = document.getElementById('related');
+    if ($related) {
       sidebarObserver.disconnect();
-      observer.observe(related, {
+      observer.observe($related, {
         childList: true,
         subtree: true
       });
     }
   });
 
-  // TODO; figure out if this is the best way to handle this, or if this is woefully inefficient
-  sidebarObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
+  let $gridView = document.getElementsByTagName('ytd-two-column-browse-results-renderer')[0];
+
+  if ($gridView) {
+    observer.observe($gridView, {
+      childList: true,
+      subtree: true
+    });
+  } else {
+    // TODO; figure out if this is the best way to handle this, or if this is woefully inefficient
+    sidebarObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
 }
 
 chrome.storage.local.get('BlockItems', (o) => {
