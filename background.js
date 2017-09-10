@@ -19,7 +19,7 @@ function addNewBlockItem(newBlockItem, callback) {
   chrome.storage.local.get('BlockItems', (s) => {
     let existingItems = s.BlockItems || [];
 
-    let foundItem = existingItems.find((item) => (item.channelId === newBlockItem.channelId));
+    let foundItem = existingItems.find((item) => (item.channelName === newBlockItem.channelName));
     if (foundItem) {
       callback(foundItem);
       return;

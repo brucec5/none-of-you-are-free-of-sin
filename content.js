@@ -16,23 +16,15 @@ var blockSet = undefined;
  * @returns {undefined}
  */
 function setBlockItems(blockItems) {
-  blockSet = new window.Set(blockItems.map((item) => item.channelId));
+  blockSet = new window.Set(blockItems.map((item) => item.channelName));
 }
 
 /**
- * @param  {string} channelId The channelId to test if blocked
+ * @param  {string} channelName The channelName to test if blocked
  * @returns {boolean} true if the given channel is blocked
  */
-function isBlocked(channelId) {
-  return blockSet.has(channelId);
-}
-
-/**
- * @param  {Element} $link A link to a channel. Doesn't necessarily have to be an a tag.
- * @returns {string} The channel ID for a given channel link
- */
-function channelId($link) {
-  return $link.dataset.ytid;
+function isBlocked(channelName) {
+  return blockSet.has(channelName);
 }
 
 /**
@@ -62,9 +54,30 @@ function throttle(func, timeout) {
  * @returns {undefined}
  */
 function blockVideo($video) {
+  console.log('Blocking a video by', channelName($video));
   $video.classList.add('blocked-video');
 }
 
+/**
+ * Given a node under a video node, find the root of the video.
+ *
+ * @param {Node} $node The node to search from
+ * @returns {Node} The found root node, or undefined if none was found.
+ */
+function rootVideoNode($node) {
+  if ($node.nodeName == 'BODY') {
+    return undefined;
+  } else if ($node.nodeName == 'YTD-COMPACT-VIDEO-RENDERER') {
+    return $node;
+  } else {
+    return rootVideoNode($node.parentNode);
+  }
+}
+
+/**
+ * Dismiss the video blocking modal
+ * @returns {undefined}
+ */
 function dismissModal() {
   let $modalShadow = document.getElementsByClassName('noyafos-modal-shadow')[0];
   $modalShadow.remove();
@@ -90,15 +103,14 @@ function submitBlockClick(event) {
 
 function submitBlock() {
   let $reasonInput = document.getElementById('NOYAFOSBlockReason');
-
   let blockItem = {
     channelName: $reasonInput.dataset.channelName,
-    channelId: $reasonInput.dataset.channelId,
+    videoTitle: $reasonInput.dataset.videoTitle,
     reason: $reasonInput.value
   };
 
   chrome.runtime.sendMessage({action: 'addNewBlockItem', newBlockItem: blockItem}, () => {
-    blockSet.add(blockItem.channelId);
+    blockSet.add(blockItem.channelName);
     dismissModal();
     main();
   });
@@ -140,13 +152,13 @@ function modal(title, callback) {
   return $modal;
 }
 
-function showBlockModal(theChannelId, theChannelName) {
+function showBlockModal(theChannelName, theVideoTitle) {
   document.body.appendChild(
     shadow(
       modal(`Block Channel ${theChannelName}`, ($modalContent) => {
         let $reasonInput = document.createElement('input');
-        $reasonInput.dataset.channelId = theChannelId;
         $reasonInput.dataset.channelName = theChannelName;
+        $reasonInput.dataset.videoTitle = theVideoTitle;
         $reasonInput.setAttribute('id', 'NOYAFOSBlockReason');
         $reasonInput.setAttribute('type', 'text');
         $reasonInput.setAttribute('placeholder', 'Block Reason');
@@ -175,60 +187,25 @@ function handleAltClickOnVideo(event) {
   if (event.altKey) {
     event.preventDefault();
 
-    let $video = event.target;
+    let $target = event.target;
+    let $video = rootVideoNode($target);
 
-    while ($video.nodeName != 'LI') {
-      if ($video.classList.contains('delete-cell')) {
-        return;
-      }
-
-      $video = $video.parentNode;
+    if ($video) {
+      let theChannelName = channelName($video);
+      let theVideoTitle = videoTitle($video);
+      showBlockModal(theChannelName, theVideoTitle);
     }
-
-    let $channelLink = $video.querySelector('[data-ytid]');
-    let theChannelId = $channelLink.dataset.ytid;
-    let theChannelName = $channelLink.textContent;
-
-    showBlockModal(theChannelId, theChannelName);
   }
 }
 
-/**
- * Checks a given video in a feed, hiding it if it should be blocked
- *
- * @param  {Element} $video The video to potentially block
- * @returns {undefined}
- */
-function checkFeedVideo($video) {
-  let $details = $video.getElementsByClassName('yt-lockup-content')[0].children;
-  let userId = channelId($details[1].children[0]);
-
-  if (isBlocked(userId)) {
-    // TODO: factor out logging to a configurable setting
-    // console.log('Blocking ' + userId);
-    blockVideo($video);
-  } else {
-    $video.onclick = handleAltClickOnVideo;
-  }
+function channelName($video) {
+  let $byline = $video.querySelector('yt-formatted-string#byline');
+  return $byline && $byline.innerHTML;
 }
 
-/**
- * Checks a feed on the youtube front page for blocked videos
- *
- * @param  {Element} $feed The root element of one of the feeds
- * @returns {undefined}
- */
-function checkFeed($feed) {
-  let $userLinks = $feed.children[0].getElementsByTagName('a');
-  let userId = $userLinks.length > 0 && channelId($userLinks[0]);
-
-  if (isBlocked(userId)) {
-    // console.log('Blocking whole feed by ' + userId);
-    blockVideo($feed);
-  } else {
-    let $videos = $feed.getElementsByClassName('yt-shelf-grid-item');
-    Array.from($videos).forEach(checkFeedVideo);
-  }
+function videoTitle($video) {
+  let $titleElement = $video.querySelector('span#video-title');
+  return $titleElement.innerHTML.trim();
 }
 
 /**
@@ -239,53 +216,12 @@ function checkFeed($feed) {
  * @returns {undefined}
  */
 function checkSidebarVideo($video) {
-  if ($video.nodeName === 'LI') {
-    let $possibleUserElements = $video.getElementsByClassName('attribution');
-    let $userElement = $possibleUserElements.length > 0 && $possibleUserElements[0].children[0];
-    let userId = $userElement && channelId($userElement);
-    if (isBlocked(userId)) {
-      // console.log('Blocking ' + userId);
-      blockVideo($video);
-    } else {
-      $video.onclick = handleAltClickOnVideo;
-    }
-  } else if ($video.id == 'watch-more-related') {
-    Array.from($video.children, checkSidebarVideo);
+  let name = channelName($video);
+  if (isBlocked(name)) {
+    blockVideo($video);
+  } else {
+    $video.onclick = handleAltClickOnVideo;
   }
-}
-
-/**
- * Checks a given sidebar section for videos to block
- *
- * @param  {Element} $section The section to traverse for blocked videos
- * @returns {undefined}
- */
-function checkSidebarSection($section) {
-  let $videos = $section.getElementsByClassName('watch-sidebar-body')[0].children[0].children;
-  Array.from($videos).forEach(checkSidebarVideo);
-}
-
-/**
- * Checks the sidebar for videos to block
- *
- * @param  {Element} $sidebar The sidebar element
- * @returns {undefined}
- */
-function checkSidebar($sidebar) {
-  if ($sidebar.children[1]) {
-    let $sections = $sidebar.children[1].children[2].children;
-    Array.from($sections).forEach(checkSidebarSection);
-  }
-}
-
-/**
- * Checks the video endscreen for videos to block. And by that, I mean just hide the endscreen.
- *
- * @param  {Element} $endscreen The endscreen element
- * @returns {undefined}
- */
-function checkEndscreen($endscreen) {
-  blockVideo($endscreen);
 }
 
 /**
@@ -299,13 +235,10 @@ function checkEndscreen($endscreen) {
  * @returns {undefined}
  */
 function main() {
-  let $feeds = document.getElementsByClassName('feed-item-dismissable');
-  let $sidebar = document.getElementsByClassName('watch-sidebar');
-  let $endscreen = document.getElementsByClassName('html5-endscreen');
+  let $sidebar = document.getElementsByTagName('ytd-compact-video-renderer');
 
-  Array.from($feeds).forEach(checkFeed);
-  Array.from($sidebar).forEach(checkSidebar);
-  Array.from($endscreen).forEach(checkEndscreen);
+  Array.from($sidebar).forEach(checkSidebarVideo);
+  console.log('done blocking things');
 }
 
 /**
@@ -316,9 +249,19 @@ function main() {
 function loadObserver() {
   let triggerFunc = throttle(main, 500);
   let observer = new MutationObserver(triggerFunc);
+  let sidebarObserver = new MutationObserver(() => {
+    let related = document.getElementById('related');
+    if (related) {
+      sidebarObserver.disconnect();
+      observer.observe(related, {
+        childList: true,
+        subtree: true
+      });
+    }
+  });
 
   // TODO; figure out if this is the best way to handle this, or if this is woefully inefficient
-  observer.observe(document.body, {
+  sidebarObserver.observe(document.body, {
     childList: true,
     subtree: true
   });

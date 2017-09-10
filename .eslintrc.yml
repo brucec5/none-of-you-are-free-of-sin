@@ -18,7 +18,5 @@ rules:
     - error
     - always
   no-console: 0
-  require-jsdoc:
-    - error
   valid-jsdoc:
     - error

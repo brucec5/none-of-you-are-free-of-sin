@@ -83,19 +83,19 @@ function saveNewBlockItem(event) {
   event.preventDefault();
 
   let $newChannelName = document.getElementById('NewChannelName');
-  let $newChannelId = document.getElementById('NewChannelId');
+  let $newVideoTitle = document.getElementById('NewVideoTitle');
   let $newReason = document.getElementById('NewReason');
 
   let blockItem = {
     channelName: $newChannelName.value,
-    channelId: $newChannelId.value,
+    videoTitle: $newVideoTitle.value,
     reason: $newReason.value
   };
 
   chrome.extension.getBackgroundPage().addNewBlockItem(blockItem, (newBlockItem) => {
     $tableBody.appendChild(tableRow(newBlockItem));
     $newChannelName.value = '';
-    $newChannelId.value = '';
+    $newVideoTitle.value = '';
     $newReason.value = '';
   });
 }
@@ -111,7 +111,7 @@ function createEditRow(blockItem) {
   $row.dataset.id = blockItem.id;
 
   $row.appendChild(td(input(blockItem.channelName, 'Channel Name', 'channel-name')));
-  $row.appendChild(td(input(blockItem.channelId, 'Channel ID', 'channel-id')));
+  $row.appendChild(td(input(blockItem.videoTitle, 'Video Title', 'video-title')));
   $row.appendChild(td(input(blockItem.reason, 'Reason', 'reason')));
   $row.appendChild(td(button('Save', commitUpdate)));
 
@@ -131,7 +131,7 @@ function commitUpdate(event) {
   let id = $row.dataset.id;
   let blockItemData = {
     channelName: $row.getElementsByClassName('channel-name')[0].value,
-    channelId: $row.getElementsByClassName('channel-id')[0].value,
+    videoTitle: $row.getElementsByClassName('video-title')[0].value,
     reason: $row.getElementsByClassName('reason')[0].value
   };
 
@@ -179,7 +179,7 @@ function tableRow(blockItem) {
   $row.onclick = showUpdateRow;
 
   $row.appendChild(td(textNode(blockItem.channelName)));
-  $row.appendChild(td(textNode(blockItem.channelId)));
+  $row.appendChild(td(textNode(blockItem.videoTitle || '')));
   $row.appendChild(td(textNode(blockItem.reason)));
 
   let $deleteLink = document.createElement('a');
