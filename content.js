@@ -13,6 +13,7 @@ var blockSet = undefined;
  * setBlockItems - Sets the locally saved block items
  *
  * @param  {Array<BlockItem>} blockItems The stored block items
+ *
  * @returns {undefined}
  */
 function setBlockItems(blockItems) {
@@ -21,6 +22,7 @@ function setBlockItems(blockItems) {
 
 /**
  * @param  {string} channelName The channelName to test if blocked
+ *
  * @returns {boolean} true if the given channel is blocked
  */
 function isBlocked(channelName) {
@@ -29,6 +31,7 @@ function isBlocked(channelName) {
 
 /**
  * @param  {Element} $video A "video" element
+ *
  * @returns {string} The channel name for a given video
  */
 function channelName($video) {
@@ -36,6 +39,11 @@ function channelName($video) {
   return $byline.title;
 }
 
+/**
+ * @param  {Element} $video A "video" element
+ *
+ * @returns {string} The video title for a given video
+ */
 function videoTitle($video) {
   let $title = $video.querySelector('#video-title');
   return $title.title;
@@ -72,20 +80,44 @@ function blockVideo($video) {
   $video.classList.add('blocked-video');
 }
 
+/**
+ * Fetch the modal shadow element (the parent element to the modal)
+ *
+ * @return {Element} The modal shadow element
+ */
 function $modalShadow() {
   return document.getElementsByClassName('noyafos-modal-shadow')[0];
 }
 
+/**
+ * Dismiss (hide) the block-video modal if it is currently shown
+ *
+ * @return {undefined}
+ */
 function dismissModal() {
   $modalShadow().style.display = 'none';
 }
 
+/**
+ * Handle click events on the block-video modal exit button
+ *
+ * @param {Event} event The click event to handle
+ *
+ * @return {undefined}
+ */
 function dismissModalHandler(event) {
   event.preventDefault();
 
   dismissModal();
 }
 
+/**
+ * Handle keyboard (Enter) events on the block-video modal reason field
+ *
+ * @param {Event} event The keyup event to handle
+ *
+ * @return {undefined}
+ */
 function submitBlockKey(event) {
   if (event.keyCode === 13) {
     event.preventDefault();
@@ -93,11 +125,23 @@ function submitBlockKey(event) {
   }
 }
 
+/**
+ * Handle click events on the block-video modal submit button
+ *
+ * @param {Event} event The click event to handle
+ *
+ * @return {undefined}
+ */
 function submitBlockClick(event) {
   event.preventDefault();
   submitBlock();
 }
 
+/**
+ * Submits a channel/video to the blocklist. Trigger that channel to get hidden.
+ *
+ * @return {undefined}
+ */
 function submitBlock() {
   let $reasonInput = document.getElementById('NOYAFOSBlockReason');
   let blockItem = {
@@ -113,6 +157,14 @@ function submitBlock() {
   });
 }
 
+/**
+ * Set the block-video modal up for a given channel/video and display it.
+ *
+ * @param {String} theChannelName The name of the channel to block
+ * @param {String} theVideoTitle The title of the video to block
+ *
+ * @return {undefined}
+ */
 function showBlockModal(theChannelName, theVideoTitle) {
   let $modal = document.querySelector('.noyafos-modal');
   let $header = $modal.querySelector('.noyafos-modal-title');
@@ -130,10 +182,11 @@ function showBlockModal(theChannelName, theVideoTitle) {
 }
 
 /**
- * handleAltClickOnVideo - Handles alt-clicking on videos. Block the video.
+ * Handles alt-clicking on videos. Triggers the block-video modal for the
+ * given video.
  *
- * @param  {type} event description
- * @returns {type}       description
+ * @param  {Event} event The click event that is being handled
+ * @returns {undefined}
  */
 function handleAltClickOnVideo(event) {
   if (!event.altKey) {
@@ -176,7 +229,7 @@ function checkVideo($video) {
  * 2. Iterate over all of the videos, blocking them if they're on the blacklist
  *   a. Check main sections on the homescreen
  *   b. Check sidebar recommendations
- *   c. Just hide all end-of-video recommendations because who cares about those
+ *   c. Just hide all end-of-video recommendations in content.css because who cares about those
  *
  * @returns {undefined}
  */
@@ -198,6 +251,11 @@ function loadObserver() {
   let observer = new MutationObserver(triggerFunc);
 }
 
+/**
+ * Fetch the HTML for the block-video modal
+ *
+ * @return {Promise<String>} The HTML for the modal
+ */
 function fetchModalHtml() {
   let htmlUrl = chrome.extension.getURL('/content_modal.html');
 
@@ -211,6 +269,11 @@ function fetchModalHtml() {
   });
 }
 
+/**
+ * Initialize the block-video modal
+ *
+ * @return {undefined}
+ */
 async function setUpBlockModal() {
   let modalHtml = await fetchModalHtml();
 
