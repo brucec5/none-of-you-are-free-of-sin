@@ -28,6 +28,15 @@ function isBlocked(channelName) {
 }
 
 /**
+ * @param  {Element} $video A "video" element
+ * @returns {string} The channel name for a given video
+ */
+function channelName($video) {
+  let $byline = $video.querySelector('#byline');
+  return $byline.title;
+}
+
+/**
  * Throttles a given function such that it only gets called once per timeout.
  * Note that calling
  * @param {function} func The function to throttle. Should take no arguments.
@@ -198,9 +207,22 @@ function handleAltClickOnVideo(event) {
   }
 }
 
-function channelName($video) {
-  let $byline = $video.querySelector('yt-formatted-string#byline');
-  return $byline && $byline.textContent;
+/**
+ * Checks a given video in a feed, hiding it if it should be blocked
+ *
+ * @param  {Element} $video The video to potentially block
+ * @returns {undefined}
+ */
+function checkFeedVideo($video) {
+  let theChannelName = channelName($video)
+
+  if (isBlocked(theChannelName)) {
+    // TODO: factor out logging to a configurable setting
+    // console.log('Blocking ' + userId);
+    blockVideo($video);
+  } else {
+    $video.onclick = handleAltClickOnVideo;
+  }
 }
 
 function videoTitle($video) {

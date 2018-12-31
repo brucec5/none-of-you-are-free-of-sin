@@ -16,4 +16,4 @@ Rather than using a fixed list of channels to block (like the great [Hbomb's You
 
 ## How?
 
-Install it (probably have to do it through developer mode), then alt-click on a video. This will pop up a form with a block reason, in case you forget why you blocked a channel later. Submit that, and the channel will be blocked. You can review blocks by looking at the options page.
+Install it (probably have to do it through developer mode), then alt-click on a video. This will pop up a form that lets you jot down why you wanted to block the channel. Submit that, and the channel will be blocked. You can review blocks by looking at the options page.
