@@ -67,29 +67,12 @@ function blockVideo($video) {
   $video.classList.add('blocked-video');
 }
 
-/**
- * Given a node under a video node, find the root of the video.
- *
- * @param {Node} $node The node to search from
- * @returns {Node} The found root node, or undefined if none was found.
- */
-function rootVideoNode($node) {
-  if ($node.nodeName == 'BODY') {
-    return undefined;
-  } else if ($node.nodeName.match(/YTD-(COMPACT-VIDEO|GRID-VIDEO|SHELF)-RENDERER/)) {
-    return $node;
-  } else {
-    return rootVideoNode($node.parentNode);
-  }
+function $modalShadow() {
+  return document.getElementsByClassName('noyafos-modal-shadow')[0];
 }
 
-/**
- * Dismiss the video blocking modal
- * @returns {undefined}
- */
 function dismissModal() {
-  let $modalShadow = document.getElementsByClassName('noyafos-modal-shadow')[0];
-  $modalShadow.remove();
+  $modalShadow().style.display = 'none';
 }
 
 function dismissModalHandler(event) {
@@ -125,65 +108,19 @@ function submitBlock() {
   });
 }
 
-function shadow($child) {
-  let $shadow = document.createElement('div');
-  $shadow.classList.add('noyafos-modal-shadow');
-  $shadow.appendChild($child);
-  return $shadow;
-}
+function showBlockModal(theChannelName) {
+  let $modal = document.querySelector('.noyafos-modal');
+  let $header = $modal.querySelector('.noyafos-modal-title');
+  let $reasonInput = $modal.querySelector('#NOYAFOSBlockReason');
 
-function modal(title, callback) {
-  let $modal = document.createElement('div');
-  $modal.classList.add('noyafos-modal');
+  $header.textContent = `Block Channel ${theChannelName}`;
 
-  let $headerRow = document.createElement('div');
-  $headerRow.classList.add('noyafos-modal-header');
+  $reasonInput.dataset.channelName = theChannelName;
+  $reasonInput.value = '';
 
-  let $header = document.createElement('h1');
-  $header.appendChild(document.createTextNode(title));
-  $headerRow.appendChild($header);
+  $modalShadow().style.display = 'block';
 
-  let $closeButton = document.createElement('a');
-  $closeButton.classList.add('noyafos-modal-close-btn');
-  $closeButton.setAttribute('href', '#');
-  $closeButton.appendChild(document.createTextNode('×'));
-  $closeButton.onclick = dismissModalHandler;
-  $header.appendChild($closeButton);
-
-  let $modalContent = document.createElement('div');
-  $modalContent.classList.add('noyafos-modal-content');
-
-  callback($modalContent);
-
-  $modal.appendChild($headerRow);
-  $modal.appendChild($modalContent);
-
-  return $modal;
-}
-
-function showBlockModal(theChannelName, theVideoTitle) {
-  document.body.appendChild(
-    shadow(
-      modal(`Block Channel ${theChannelName}`, ($modalContent) => {
-        let $reasonInput = document.createElement('input');
-        $reasonInput.dataset.channelName = theChannelName;
-        $reasonInput.dataset.videoTitle = theVideoTitle;
-        $reasonInput.setAttribute('id', 'NOYAFOSBlockReason');
-        $reasonInput.setAttribute('type', 'text');
-        $reasonInput.setAttribute('placeholder', 'Block Reason');
-        $reasonInput.onkeyup = submitBlockKey;
-        $modalContent.appendChild($reasonInput);
-
-        let $submit = document.createElement('button');
-        $submit.classList.add('noyafos-submit');
-        $submit.appendChild(document.createTextNode('Submit'));
-        $submit.onclick = submitBlockClick;
-        $modalContent.appendChild($submit);
-
-        window.setTimeout(() => $reasonInput.focus(), 0);
-      })
-    )
-  );
+  $reasonInput.focus();
 }
 
 /**
@@ -196,14 +133,16 @@ function handleAltClickOnVideo(event) {
   if (event.altKey) {
     event.preventDefault();
 
-    let $target = event.target;
-    let $video = rootVideoNode($target);
+    let $video = event.target;
 
-    if ($video) {
-      let theChannelName = channelName($video);
-      let theVideoTitle = videoTitle($video);
-      showBlockModal(theChannelName, theVideoTitle);
+    // TODO: is this always the case?
+    while ($video.parentNode.id != 'items') {
+      $video = $video.parentNode;
     }
+
+    let theChannelName = channelName($video)
+
+    showBlockModal(theChannelName);
   }
 }
 
@@ -257,14 +196,13 @@ function checkVideo($video) {
  * @returns {undefined}
  */
 function main() {
-  let $sidebar = document.getElementsByTagName('ytd-compact-video-renderer');
-  let $grid = document.getElementsByTagName('ytd-grid-video-renderer');
-  let $shelf = document.getElementsByTagName('ytd-shelf-renderer');
+  let $feeds = document.getElementsByTagName('ytd-grid-video-renderer');
+  // let $sidebar = document.getElementsByClassName('watch-sidebar');
+  // let $endscreen = document.getElementsByClassName('html5-endscreen');
 
-  Array.from($sidebar).forEach(checkVideo);
-  Array.from($grid).forEach(checkVideo);
-  Array.from($shelf).forEach(checkVideo);
-  console.log('done blocking things');
+  Array.from($feeds).forEach(checkFeedVideo);
+  // Array.from($sidebar).forEach(checkSidebar);
+  // Array.from($endscreen).forEach(checkEndscreen);
 }
 
 /**
@@ -275,32 +213,37 @@ function main() {
 function loadObserver() {
   let triggerFunc = throttle(main, 500);
   let observer = new MutationObserver(triggerFunc);
-  let sidebarObserver = new MutationObserver(() => {
-    let $related = document.getElementById('related');
-    if ($related) {
-      sidebarObserver.disconnect();
-      observer.observe($related, {
-        childList: true,
-        subtree: true
-      });
-    }
-  });
-
-  let $gridView = document.getElementsByTagName('ytd-two-column-browse-results-renderer')[0];
-
-  if ($gridView) {
-    observer.observe($gridView, {
-      childList: true,
-      subtree: true
-    });
-  } else {
-    // TODO; figure out if this is the best way to handle this, or if this is woefully inefficient
-    sidebarObserver.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-  }
 }
+
+function fetchModalHtml() {
+  let htmlUrl = chrome.extension.getURL('/content_modal.html');
+
+  return fetch(
+    htmlUrl
+  ).then(
+    response => response.text()
+  ).catch(failure => {
+    console.error('Failure to fetch modal!');
+    debugger;
+  });
+}
+
+async function setUpBlockModal() {
+  let modalHtml = await fetchModalHtml();
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  let $modal = document.querySelector('.noyafos-modal');
+  let $closeButton = $modal.querySelector('.noyafos-modal-close-btn');
+  let $reasonInput = $modal.querySelector('#NOYAFOSBlockReason');
+  let $submit = $modal.querySelector('.noyafos-submit');
+
+  $closeButton.onclick = dismissModalHandler;
+  $reasonInput.onkeyup = submitBlockKey;
+  $submit.onclick = submitBlockClick;
+}
+
+setUpBlockModal();
 
 chrome.storage.local.get('BlockItems', (o) => {
   setBlockItems(o.BlockItems || []);
