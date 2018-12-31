@@ -36,6 +36,11 @@ function channelName($video) {
   return $byline.title;
 }
 
+function videoTitle($video) {
+  let $title = $video.querySelector('#video-title');
+  return $title.title;
+}
+
 /**
  * Throttles a given function such that it only gets called once per timeout.
  * Note that calling
@@ -108,7 +113,7 @@ function submitBlock() {
   });
 }
 
-function showBlockModal(theChannelName) {
+function showBlockModal(theChannelName, theVideoTitle) {
   let $modal = document.querySelector('.noyafos-modal');
   let $header = $modal.querySelector('.noyafos-modal-title');
   let $reasonInput = $modal.querySelector('#NOYAFOSBlockReason');
@@ -116,6 +121,7 @@ function showBlockModal(theChannelName) {
   $header.textContent = `Block Channel ${theChannelName}`;
 
   $reasonInput.dataset.channelName = theChannelName;
+  $reasonInput.dataset.videoTitle = theVideoTitle;
   $reasonInput.value = '';
 
   $modalShadow().style.display = 'block';
@@ -130,20 +136,22 @@ function showBlockModal(theChannelName) {
  * @returns {type}       description
  */
 function handleAltClickOnVideo(event) {
-  if (event.altKey) {
-    event.preventDefault();
-
-    let $video = event.target;
-
-    // TODO: is this always the case?
-    while ($video.parentNode.id != 'items') {
-      $video = $video.parentNode;
-    }
-
-    let theChannelName = channelName($video)
-
-    showBlockModal(theChannelName);
+  if (!event.altKey) {
+    return;
   }
+
+  event.preventDefault();
+
+  let $video = event.target;
+
+  while ($video.parentNode.id != 'items') {
+    $video = $video.parentNode;
+  }
+
+  let theChannelName = channelName($video)
+  let theVideoTitle = videoTitle($video)
+
+  showBlockModal(theChannelName, theVideoTitle);
 }
 
 /**

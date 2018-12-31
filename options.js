@@ -108,6 +108,7 @@ function createEditRow(blockItem) {
   $row.dataset.id = blockItem.id;
 
   $row.appendChild(td(input(blockItem.channelName, 'Channel Name', 'channel-name')));
+  $row.appendChild(document.createElement('td'));
   $row.appendChild(td(input(blockItem.reason, 'Reason', 'reason')));
   $row.appendChild(td(button('Save', commitUpdate)));
 
@@ -174,6 +175,7 @@ function tableRow(blockItem) {
   $row.onclick = showUpdateRow;
 
   $row.appendChild(td(textNode(blockItem.channelName)));
+  $row.appendChild(td(textNode(blockItem.videoTitle || '')));
   $row.appendChild(td(textNode(blockItem.reason)));
 
   let $deleteLink = document.createElement('a');
