@@ -160,33 +160,10 @@ function handleAltClickOnVideo(event) {
  * @param  {Element} $video The video to potentially block
  * @returns {undefined}
  */
-function checkFeedVideo($video) {
+function checkVideo($video) {
   let theChannelName = channelName($video)
 
   if (isBlocked(theChannelName)) {
-    // TODO: factor out logging to a configurable setting
-    // console.log('Blocking ' + userId);
-    blockVideo($video);
-  } else {
-    $video.onclick = handleAltClickOnVideo;
-  }
-}
-
-function videoTitle($video) {
-  let $titleElement = $video.querySelector('#video-title');
-  return $titleElement.textContent.trim();
-}
-
-/**
- * Checks a given video in the sidebar, hiding it if it should be blocked.
- * If the video is actually the "Show More" link at the end, recurse on the videos under that.
- *
- * @param  {Element} $video The video to potentially block
- * @returns {undefined}
- */
-function checkVideo($video) {
-  let name = channelName($video);
-  if (isBlocked(name)) {
     blockVideo($video);
   } else {
     $video.onclick = handleAltClickOnVideo;
@@ -205,12 +182,10 @@ function checkVideo($video) {
  */
 function main() {
   let $feeds = document.getElementsByTagName('ytd-grid-video-renderer');
-  // let $sidebar = document.getElementsByClassName('watch-sidebar');
-  // let $endscreen = document.getElementsByClassName('html5-endscreen');
+  let $sidebar = document.getElementsByTagName('ytd-compact-video-renderer');
 
-  Array.from($feeds).forEach(checkFeedVideo);
-  // Array.from($sidebar).forEach(checkSidebar);
-  // Array.from($endscreen).forEach(checkEndscreen);
+  Array.from($feeds).forEach(checkVideo);
+  Array.from($sidebar).forEach(checkVideo);
 }
 
 /**

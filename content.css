@@ -1,4 +1,5 @@
-.blocked-video, .html5-endscreen {
+.blocked-video,
+.html5-endscreen {
   display: none !important;
 }
 
